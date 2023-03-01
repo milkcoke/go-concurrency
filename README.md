@@ -63,6 +63,9 @@ Goroutine doesn't use shared memory to avoid deadlock or race condition problem.
 > This is running in the context of the OS threads.
 > Many goroutines can be executed in the context of the single OS thread.
 
+### Memory map of goroutine
+![goroutine memory map](assets/memeorymap_in_goroutine.png)
+
 ## WaitGroup
 #### Wrong example
 **_Calling `WaitGroup.Add()` in function is bad approach._** \
@@ -99,6 +102,34 @@ func main() {
     waitGroup.Wait()
 }
 ```
+
+### Scheduling in goroutine
+- Go scheduler is a part of the Go runtime. It's known as M:N scheduler.
+- Go scheduler runs in user space.
+- Go scheduler uses OS threads to schedule goroutines for execution.
+- Go runtime creates number of worker OS threads, equal to GOMAXPROCS. \
+GOMAXPROCS : default value is number of processors on machine.
+- GO scheduler distrbiutes runnable goroutines over multiple worker OS threads.
+- N goroutines could be scheduled on M OS threads that run on at most GOMAXPROCS numbers of processors.
+- Time slice `10ms` is set, so when goroutine is running for more than 10ms, Go will try to preempt it. (Asynchronous preemptive scheduling) \
+This is for protecting specific goroutine hog on the CPU for long time.
+
+### State of goroutine
+![Goroutine state](assets/goroutine_state.png)
+
+#### Runnable
+Wait in the run queue.
+
+#### Executing
+Running state on OS thread \
+Runnable state to Executing state when preempted by scheduler as time goes by more than time slice (Default `10 ms`).
+![Runnable to Executing](assets/Goroutine_State.gif)
+
+#### Waiting
+Waiting state
+Running state to this state when I/O or event wait (e.g. blocked on channel, blocked on a system call or waiting for the mutex lock) \
+After I/O or event completes, moved back to the runnable state.
+![Executing to Waiting](assets/Goroutine_Executing_Waiting.gif)
 
 ## channels
 ## Select (multiplex the channel)
