@@ -103,7 +103,7 @@ func main() {
 }
 ```
 
-### Scheduling in goroutine
+## Scheduling in goroutine
 - Go scheduler is a part of the Go runtime. It's known as M:N scheduler.
 - Go scheduler runs in user space.
 - Go scheduler uses OS threads to schedule goroutines for execution.
@@ -114,7 +114,21 @@ GOMAXPROCS : default value is number of processors on machine.
 - Time slice `10ms` is set, so when goroutine is running for more than 10ms, Go will try to preempt it. (Asynchronous preemptive scheduling) \
 This is for protecting specific goroutine hog on the CPU for long time.
 
-### State of goroutine
+### Overview
+![Go Schduler Overview](assets/Go_Scheduler_Overview.png)
+
+### Global Run Queue
+![Global Run Queue](assets/Global_Run_Queue.png)
+
+### OS Thread
+![OS Thread](assets/Go_OS_Thread.png)
+
+### Logical Run Queue
+![Logical Run Queue](assets/Goroutines_in_local_run_queue.png)
+
+---
+
+## State of goroutine
 ![Goroutine state](assets/goroutine_state.png)
 
 #### Runnable
