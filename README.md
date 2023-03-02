@@ -126,6 +126,10 @@ This is for protecting specific goroutine hog on the CPU for long time.
 ### Logical Run Queue
 ![Logical Run Queue](assets/Goroutines_in_local_run_queue.png)
 
+**Go scheduler periodically checks each logical run queue of logical processor and reassigns the goroutines as needed to balance the load.** \
+This is mechanism of load balancing protecting specific logical processor from being overloaded. \
+In other world, each logical processor has logical run queue, and which can take other one's goroutines when it's idle.
+
 ---
 
 ## State of goroutine
