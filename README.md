@@ -135,19 +135,68 @@ In other world, each logical processor has logical run queue, and which can take
 ## State of goroutine
 ![Goroutine state](assets/goroutine_state.png)
 
-#### Runnable
+### Runnable
 Wait in the run queue.
 
-#### Executing
+### Executing
 Running state on OS thread \
 Runnable state to Executing state when preempted by scheduler as time goes by more than time slice (Default `10 ms`).
 ![Runnable to Executing](assets/Goroutine_State.gif)
 
-#### Waiting
+### Waiting
 Waiting state
 Running state to this state when I/O or event wait (e.g. blocked on channel, blocked on a system call or waiting for the mutex lock) \
 After I/O or event completes, moved back to the runnable state.
 ![Executing to Waiting](assets/Goroutine_Executing_Waiting.gif)
+
+---
+## Synchronous system call
+### Problem
+Synchronous system call blocks the thread until I/O is to be completed. \
+When synchronous system call occurs, OS thread is to be waiting state, and enqueue into waiting queue. This is not occupied by CPU. \
+This means synchronous system call reduces parallelism.
+multiple goroutines can't be executed parallely since OS thread is blocked and waiting which has multiple logical processor including goroutine,
+
+> How to handle this problem in go scheduler?
+
+### Solution
+Go scheduler gets another OS thread from thread pool or creates new one. \
+Process is shown below
+
+![Synchronous context switching in Go](assets/Context_Switching_Synchronous.gif)
+
+1. Synchronous system call occurs. (e.g. File Read)
+2. OS thread is blocked and transforming state from running to waiting. \
+Which is located into waiting queue.
+3. Go scheduler gets another OS thread from thread pool cache or creates new one.
+4. And move the logical processor to new one except goroutine which makes I/O task.
+5. With new OS thread, the other goroutines are activated by go scheduler.
+6. In one side, IO completion, the I/O goroutine is returned to new OS thread.
+7. Old OS thread is returned to thread pool cache.
+
+
+
+
+## Asynchronous system call
+### Problem
+Asynchronous system call occurs when file descriptor (**FD** as acronym) is used on network IO with non-blocking mode. \
+Async syscall doesn't block the OS thread but occurs error when the socket buffer is empty trying Read or buffer full trying Write. \
+In async mode, it should provide retrying mechanism network IO after error occurs. \
+How does go handle this problem?
+
+### Solution
+Go uses [NetPoller](https://github.com/golang/go/blob/master/src/runtime/netpoll.go) for handling asynchronous system call. \
+The NetPoller uses interface provided by OS (epoll kqueue, IOPC) to do polling status of FD.
+
+![Asynchronous system call context switching in go](assets/Asynchronous_contexet_swiching_in_go.gif)
+
+1. Asynchronous system call occurs in goroutine
+2. Go scheduler move the goroutine to NetPoller thread out of OS thread which is created.
+3. NetPoller do polling the status of FD
+4. If IO operation is ready, NetPoller could get notification from OS
+5. NetPoller will notify to the goroutine to retry I/O
+6. The goroutine would return to origin logical run queue when I/O operation completes.
+
 
 ## channels
 ## Select (multiplex the channel)
